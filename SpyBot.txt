@@ -1,0 +1,31 @@
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, types, F
+
+TOKEN = "7841230741:AAHuTIB5P1cjcEOBTarUIYnyXgd9yYgdDk8"
+GROUP_ID = -1001888670791  # ID группы (откуда пересылать)
+CHANNEL_ID = -1002339645578  # ID канала (куда пересылать)
+
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+
+
+@dp.message(F.chat.id == GROUP_ID)
+async def forward_messages(message: types.Message):
+    user_id = message.from_user.id if message.from_user else "Неизвестный"
+    msg_link = f"https://t.me/c/{str(GROUP_ID)[4:]}/{message.message_id}"
+
+    caption = f"👤 ID отправителя: `{user_id}`\n🔗 [Оригинал сообщения]({msg_link})"
+
+    await bot.forward_message(CHANNEL_ID, GROUP_ID, message.message_id)
+    await bot.send_message(CHANNEL_ID, caption, parse_mode="Markdown")
+
+
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    print("Бот запущен!")
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
