@@ -1,6 +1,8 @@
 import asyncio
+from flask import Flask
 import logging
 from aiogram import Bot, Dispatcher, types, F
+from threading import Thread
 
 TOKEN = "7841230741:AAHuTIB5P1cjcEOBTarUIYnyXgd9yYgdDk8"
 GROUP_ID = -1001888670791  # ID группы (откуда пересылать)
@@ -9,7 +11,7 @@ CHANNEL_ID = -1002339645578  # ID канала (куда пересылать)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-
+# Обработчик пересылки сообщений
 @dp.message(F.chat.id == GROUP_ID)
 async def forward_messages(message: types.Message):
     user_id = message.from_user.id if message.from_user else "Неизвестный"
@@ -17,15 +19,32 @@ async def forward_messages(message: types.Message):
 
     caption = f"👤 ID отправителя: `{user_id}`\n🔗 [Оригинал сообщения]({msg_link})"
 
+    # Пересылаем сообщение в канал
     await bot.forward_message(CHANNEL_ID, GROUP_ID, message.message_id)
     await bot.send_message(CHANNEL_ID, caption, parse_mode="Markdown")
 
 
-async def main():
+# Настройка Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return 'Hello, World!'
+
+# Функция для запуска Flask в отдельном потоке
+def run_flask():
+    app.run(host='0.0.0.0', port=5000)
+
+# Асинхронная функция для запуска бота
+async def start_bot():
     logging.basicConfig(level=logging.INFO)
     print("Бот запущен!")
     await dp.start_polling(bot)
 
+if __name__ == '__main__':
+    # Запускаем Flask в отдельном потоке
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    # Запускаем бота
+    asyncio.run(start_bot())
